@@ -12,7 +12,8 @@ type ParseResult struct {
 }
 
 type Model struct {
-	Name string
+	Name   string
+	Fields []*ast.Field
 }
 
 func ParseFile(f string) (*ParseResult, error) {
@@ -27,15 +28,27 @@ func ParseFile(f string) (*ParseResult, error) {
 		return nil, err
 	}
 
-	walker := &ASTWalker{fs}
-	walker.Visit(astFile)
-	return &ParseResult{}, nil
-}
+	models := make([]Model, 0)
 
-type ASTWalker struct {
-	fset *token.FileSet
-}
+	ast.Inspect(astFile, func(n ast.Node) bool {
+		decl, ok := n.(*ast.GenDecl)
+		if !ok || decl.Tok != token.TYPE {
+			// We only care about const declarations.
+			return true
+		}
 
-func (a *ASTWalker) Visit(node ast.Node) ast.Visitor {
-	return a
+		for _, spec := range decl.Specs {
+			tspec := spec.(*ast.TypeSpec)
+			if stype, ok := tspec.Type.(*ast.StructType); ok {
+				models = append(models, Model{
+					Name:   tspec.Name.Name,
+					Fields: stype.Fields.List,
+				})
+			}
+		}
+
+		return false
+	})
+
+	return &ParseResult{models}, nil
 }
