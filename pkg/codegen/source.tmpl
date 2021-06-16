@@ -1,0 +1,6 @@
+package {{.Package}}
+
+func ({{.ReceiverType | ReceiverName }} {{.ReceiverType}}) Get{{.Model.Name}}(pk {{.Model.PrimaryKey}}) (*{{.Model.Name}}, error) {
+{{- with $ReceiverName = .ReceiverType | ReceiverName }}
+{{- end }}
+}
